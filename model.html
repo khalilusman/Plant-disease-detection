@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+            background-image: url('static/img.jpg');
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 0; 
+
+        }
+        
+        
+        h1 {
+            margin-top: 30px;
+            color: white;
+        }
+        .upload-box {
+            border: 2px dashed #007bff;
+            padding: 20px;
+            width: 300px;
+            margin: 50px auto;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .upload-box.hover {
+            background-color: #e8e8e8;
+        }
+        #uploaded-image {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .results p {
+            font-size: 18px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+   
+    
+
+    <h1>Plant Disease Classifier</h1>
+    <div id="drop-zone" class="upload-box">
+        <p>Drag & drop your image here or click to upload </p>
+        <input type="file" id="file-input" accept="image/*" style="display: none;">
+    </div>
+
+    <img id="uploaded-image" alt="Uploaded Image" style="display: none;"/>
+
+    <div class="results" id="results">
+        <p id="prediction"></p>
+        <p id="confidence"></p>
+    </div>
+
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const predictionText = document.getElementById('prediction');
+        const confidenceText = document.getElementById('confidence');
+
+        // Function to handle the drag & drop and upload
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', handleFileUpload);
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('hover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('hover');
+            const file = e.dataTransfer.files[0];
+            handleFileUpload({ target: { files: [file] } });
+        });
+
+        // Function to handle the file upload and prediction
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                uploadedImage.src = reader.result;
+                uploadedImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // Call the API
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('http://localhost:8000/prediction', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                predictionText.innerText = `Prediction: ${data.predicted_class}`;
+                confidenceText.innerText = `Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+            })
+            .catch(error => {
+                predictionText.innerText = 'Error predicting the image';
+                console.error('Error:', error);
+            });
+        }
+    </script>
+
+</body>
+</html>
